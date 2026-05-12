@@ -144,6 +144,10 @@ class HomePage extends StatelessWidget {
 
           // Today's Plan
           if (todayPlan != null) _buildPlanCard(todayPlan, wd) else _buildNoPlan(),
+          const SizedBox(height: 16),
+
+          // 今日内心对话
+          _buildSelfDialogueCard(),
           const SizedBox(height: 40),
         ],
       ),
@@ -198,6 +202,46 @@ class HomePage extends StatelessWidget {
           const Text('定制周计划', style: TextStyle(color: C.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           const Text('还没有生成的 AI 计划，去 AI 助手页面生成吧', textAlign: TextAlign.center, style: TextStyle(color: C.textMuted, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  static const _selfDialogues = [
+    '你现在想吃东西，是因为身体需要，还是因为情绪需要？',
+    '这个 craving 会过去的。你不需要对抗它，只需要观察它。',
+    '你上次忍住了吗？那次之后感觉怎么样？',
+    '如果现在吃了，10分钟后的你会怎么想？',
+    '饥饿感是波浪式的，等一等它就会退去。',
+    '你不是在"忍耐"，你是在选择对自己更好的事。',
+    '今天的你已经在进步了，只是你没注意到。',
+    '情绪会来也会走，但你的选择会留下来。',
+    '深呼吸三次。你比你以为的更有掌控力。',
+    '身体知道什么是足够的，是大脑在吵着要更多。',
+    '你不需要靠食物来安慰自己，你值得更好的照顾。',
+    '这个 moment 不定义你。你的整体选择才定义你。',
+  ];
+
+  Widget _buildSelfDialogueCard() {
+    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+    final dialogue = _selfDialogues[dayOfYear % _selfDialogues.length];
+    return AppCard(
+      borderColor: C.cyan.withOpacity(0.15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.chat_bubble_outline_rounded, color: C.cyan, size: 18),
+              const SizedBox(width: 8),
+              const Text('今日内心对话', style: TextStyle(color: C.textPrimary, fontSize: 14, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '"$dialogue"',
+            style: const TextStyle(color: C.textSecondary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.6, fontStyle: FontStyle.italic),
+          ),
         ],
       ),
     );
