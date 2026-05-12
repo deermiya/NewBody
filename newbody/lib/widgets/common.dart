@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 // ============ 现代设计语言：NewBody Mint Fresh ============
@@ -7,15 +6,15 @@ class C {
   static const bg = Color(0xFFF7FAF9); // 极淡薄荷绿
   static const bgSurface = Colors.white;
   static const border = Color(0xFFE2E9E7);
-  
+
   // 核心色调 (清新自然系)
-  static const green = Color(0xFF2D6A4F);  // 森林深绿
-  static const cyan = Color(0xFF52B788);   // 嫩芽绿
+  static const green = Color(0xFF2D6A4F); // 森林深绿
+  static const cyan = Color(0xFF52B788); // 嫩芽绿
   static const accent = Color(0xFF74C69D); // 浅绿
   static const amber = Color(0xFFFFB347);
   static const rose = Color(0xFFFF6B6B);
   static const purple = Color(0xFF9B5DE5);
-  
+
   // 文字颜色层级 (深绿灰色调)
   static const textPrimary = Color(0xFF1B4332);
   static const textSecondary = Color(0xFF40916C);
@@ -40,7 +39,13 @@ class AppCard extends StatelessWidget {
   final Color? borderColor;
   final double? blur;
 
-  const AppCard({super.key, required this.child, this.padding, this.borderColor, this.blur});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.borderColor,
+    this.blur,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +77,12 @@ class GradientButton extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
 
-  const GradientButton({super.key, required this.text, required this.onTap, this.icon});
+  const GradientButton({
+    super.key,
+    required this.text,
+    required this.onTap,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +105,19 @@ class GradientButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) ...[Icon(icon, size: 18, color: Colors.white), const SizedBox(width: 8)],
-            Text(text, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+            if (icon != null) ...[
+              Icon(icon, size: 18, color: Colors.white),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
           ],
         ),
       ),

@@ -164,6 +164,76 @@ class WeekPlan {
   Map<String, dynamic> toJson() => {'days': days.map((e) => e.toJson()).toList()};
 }
 
+// ============ AI运动计划 ============
+class ExercisePlanEntry {
+  final String name;
+  final String equipment;
+  final int sets;
+  final String reps;
+  final String rest;
+  final int cal;
+  final String? tip;
+
+  ExercisePlanEntry({required this.name, required this.equipment, required this.sets, required this.reps, required this.rest, required this.cal, this.tip});
+
+  factory ExercisePlanEntry.fromJson(Map<String, dynamic> j) => ExercisePlanEntry(
+        name: j['name'] ?? '',
+        equipment: j['equipment'] ?? '徒手',
+        sets: j['sets'] ?? 0,
+        reps: j['reps'] ?? '',
+        rest: j['rest'] ?? '',
+        cal: j['cal'] ?? 0,
+        tip: j['tip'],
+      );
+  Map<String, dynamic> toJson() => {'name': name, 'equipment': equipment, 'sets': sets, 'reps': reps, 'rest': rest, 'cal': cal, 'tip': tip};
+}
+
+class ExerciseDayPlan {
+  final String day;
+  final String type;
+  final String? focus;
+  final List<ExercisePlanEntry> exercises;
+  final int totalCal;
+  final String? note;
+
+  ExerciseDayPlan({required this.day, required this.type, this.focus, required this.exercises, required this.totalCal, this.note});
+
+  factory ExerciseDayPlan.fromJson(Map<String, dynamic> j) => ExerciseDayPlan(
+        day: j['day'] ?? '',
+        type: j['type'] ?? '训练日',
+        focus: j['focus'],
+        exercises: (j['exercises'] as List?)?.map((e) => ExercisePlanEntry.fromJson(e)).toList() ?? [],
+        totalCal: j['total_cal'] ?? 0,
+        note: j['note'],
+      );
+  Map<String, dynamic> toJson() => {'day': day, 'type': type, 'focus': focus, 'exercises': exercises.map((e) => e.toJson()).toList(), 'total_cal': totalCal, 'note': note};
+}
+
+class WeekExercisePlan {
+  final List<ExerciseDayPlan> days;
+
+  WeekExercisePlan({required this.days});
+
+  factory WeekExercisePlan.fromJson(Map<String, dynamic> j) =>
+      WeekExercisePlan(days: (j['days'] as List).map((e) => ExerciseDayPlan.fromJson(e)).toList());
+  Map<String, dynamic> toJson() => {'days': days.map((e) => e.toJson()).toList()};
+}
+
+// ============ 预设器械 ============
+const List<Map<String, String>> presetEquipment = [
+  {'name': '哑铃', 'icon': '🏋️'},
+  {'name': '弹力带', 'icon': '🪢'},
+  {'name': '瑜伽垫', 'icon': '🧘'},
+  {'name': '引体向上杆', 'icon': '💪'},
+  {'name': '壶铃', 'icon': '🔔'},
+  {'name': '跳绳', 'icon': '⏫'},
+  {'name': '腹肌轮', 'icon': '🎡'},
+  {'name': '泡沫轴', 'icon': '🧱'},
+  {'name': '杠铃', 'icon': '🏋️'},
+  {'name': '拉力器', 'icon': '🔗'},
+  {'name': '健身球', 'icon': '⚽'},
+];
+
 // ============ 食物/运动数据库 ============
 class FoodItem {
   final String name;

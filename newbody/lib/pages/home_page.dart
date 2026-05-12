@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config.dart';
 import '../models/data_models.dart';
 import '../widgets/common.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatelessWidget {
   final AppData data;
@@ -10,8 +11,17 @@ class HomePage extends StatelessWidget {
   final int todayCal;
   final int todayBurn;
   final double latestWeight;
+  final VoidCallback? onConfigChanged;
 
-  const HomePage({super.key, required this.data, this.plan, required this.todayCal, required this.todayBurn, required this.latestWeight});
+  const HomePage({
+    super.key,
+    required this.data,
+    this.plan,
+    required this.todayCal,
+    required this.todayBurn,
+    required this.latestWeight,
+    this.onConfigChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +29,9 @@ class HomePage extends StatelessWidget {
     final totalLost = AppConfig.startWeight - latestWeight;
     final totalNeed = AppConfig.startWeight - AppConfig.targetWeight;
     final progress = (totalLost / totalNeed).clamp(0.0, 1.0);
-    final daysLeft = DateTime.parse(AppConfig.targetDate).difference(DateTime.now()).inDays.clamp(0, 9999);
+    final daysLeft = DateTime.parse(
+      AppConfig.targetDate,
+    ).difference(DateTime.now()).inDays.clamp(0, 9999);
     final wd = weekdayCN();
     final todayPlan = plan?.days.where((d) => d.day == wd).firstOrNull;
 
@@ -35,22 +47,63 @@ class HomePage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [
           // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('NewBody', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: C.textPrimary, letterSpacing: -0.5)),
-                  Text('目标：${(AppConfig.targetWeight * 2).toStringAsFixed(0)} 斤 · 剩余 $daysLeft 天', style: const TextStyle(color: C.textSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.glassBorder)),
-                child: const Icon(Icons.notifications_none_rounded, color: C.textPrimary, size: 22),
-              ),
-            ],
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProfilePage(onSaved: () {
+                    if (onConfigChanged != null) onConfigChanged!();
+                  }),
+                ),
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'NewBody',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: C.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          '目标：${(AppConfig.targetWeight * 2).toStringAsFixed(0)} 斤 · 剩余 $daysLeft 天',
+                          style: const TextStyle(
+                            color: C.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.edit_outlined, size: 14, color: C.textMuted),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: C.glassBorder),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: C.textPrimary,
+                    size: 22,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -70,22 +123,40 @@ class HomePage extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: C.green.withOpacity(0.03), blurRadius: 40, spreadRadius: 5),
+                      BoxShadow(
+                        color: C.green.withOpacity(0.03),
+                        blurRadius: 40,
+                        spreadRadius: 5,
+                      ),
                     ],
                   ),
                 ),
                 SizedBox(
                   width: 200,
                   height: 200,
-                  child: CustomPaint(
-                    painter: _ProgressRingPainter(progress),
-                  ),
+                  child: CustomPaint(painter: _ProgressRingPainter(progress)),
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('${(latestWeight * 2).toStringAsFixed(1)}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: C.textPrimary, letterSpacing: -2)),
-                    const Text('当前斤数', style: TextStyle(fontSize: 12, color: C.textSecondary, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                    Text(
+                      (latestWeight * 2).toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        color: C.textPrimary,
+                        letterSpacing: -2,
+                      ),
+                    ),
+                    const Text(
+                      '当前斤数',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: C.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -96,17 +167,41 @@ class HomePage extends StatelessWidget {
           // Quick Stats Grid
           Row(
             children: [
-              _StatCard('累计已减', '${(totalLost * 2).toStringAsFixed(1)}', '斤', C.green, Icons.trending_down_rounded),
+              _StatCard(
+                '累计已减',
+                (totalLost * 2).toStringAsFixed(1),
+                '斤',
+                C.green,
+                Icons.trending_down_rounded,
+              ),
               const SizedBox(width: 12),
-              _StatCard('今日摄入', '$todayCal', 'kcal', C.purple, Icons.restaurant_rounded),
+              _StatCard(
+                '今日摄入',
+                '$todayCal',
+                'kcal',
+                C.purple,
+                Icons.restaurant_rounded,
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _StatCard('运动消耗', '$todayBurn', 'kcal', C.cyan, Icons.bolt_rounded),
+              _StatCard(
+                '运动消耗',
+                '$todayBurn',
+                'kcal',
+                C.cyan,
+                Icons.bolt_rounded,
+              ),
               const SizedBox(width: 12),
-              _StatStatCard('剩余配额', '$remaining', 'kcal', remaining >= 0 ? C.accent : C.rose, Icons.pie_chart_outline_rounded),
+              _StatStatCard(
+                '剩余配额',
+                '$remaining',
+                'kcal',
+                remaining >= 0 ? C.accent : C.rose,
+                Icons.pie_chart_outline_rounded,
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -120,16 +215,39 @@ class HomePage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('今日预算消耗', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: C.textPrimary)),
-                    Text('${(todayCal / AppConfig.dailyCalorieTarget * 100).toStringAsFixed(0)}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: todayCal > AppConfig.dailyCalorieTarget ? C.rose : C.green)),
+                    const Text(
+                      '今日预算消耗',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: C.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '${(todayCal / AppConfig.dailyCalorieTarget * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: todayCal > AppConfig.dailyCalorieTarget
+                            ? C.rose
+                            : C.green,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Stack(
                   children: [
-                    Container(height: 12, decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(6))),
+                    Container(
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: C.bg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
                     FractionallySizedBox(
-                      widthFactor: (todayCal / AppConfig.dailyCalorieTarget).clamp(0.0, 1.0),
+                      widthFactor: (todayCal / AppConfig.dailyCalorieTarget)
+                          .clamp(0.0, 1.0),
                       child: Container(
                         height: 12,
                         decoration: BoxDecoration(
@@ -141,13 +259,23 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text('目标：${AppConfig.dailyCalorieTarget} kcal · 还可摄入 $remaining kcal', style: const TextStyle(fontSize: 12, color: C.textMuted, fontWeight: FontWeight.w500)),
+                Text(
+                  '目标：${AppConfig.dailyCalorieTarget} kcal · 还可摄入 $remaining kcal',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: C.textMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
 
           // Today's Plan
-          if (todayPlan != null) _buildPlanCard(todayPlan, wd) else _buildNoPlan(),
+          if (todayPlan != null)
+            _buildPlanCard(todayPlan, wd)
+          else
+            _buildNoPlan(),
           const SizedBox(height: 40),
         ],
       ),
@@ -161,9 +289,20 @@ class HomePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, size: 18, color: C.green),
+              const Icon(
+                Icons.calendar_today_rounded,
+                size: 18,
+                color: C.green,
+              ),
               const SizedBox(width: 10),
-              Text('今日 AI 建议 ($wd)', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: C.textPrimary)),
+              Text(
+                '今日 AI 建议 ($wd)',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: C.textPrimary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -172,17 +311,46 @@ class HomePage extends StatelessWidget {
           _PlanItem('晚餐', plan.meals['dinner']),
           if (plan.exercise.isNotEmpty) ...[
             const Divider(color: C.border, height: 32),
-            const Text('推荐运动', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: C.textSecondary)),
+            const Text(
+              '推荐运动',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: C.textSecondary,
+              ),
+            ),
             const SizedBox(height: 12),
             for (final ex in plan.exercise)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: C.cyan, shape: BoxShape.circle)),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: C.cyan,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('${ex.name} (${ex.duration})', style: const TextStyle(fontSize: 14, color: C.textPrimary))),
-                    Text('-${ex.cal}kcal', style: const TextStyle(fontSize: 13, color: C.green, fontWeight: FontWeight.w700)),
+                    Expanded(
+                      child: Text(
+                        '${ex.name} (${ex.duration})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: C.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '-${ex.cal}kcal',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: C.green,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -197,11 +365,26 @@ class HomePage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       child: Column(
         children: [
-          Icon(Icons.auto_awesome_rounded, size: 32, color: C.green.withOpacity(0.3)),
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 32,
+            color: C.green.withOpacity(0.3),
+          ),
           const SizedBox(height: 16),
-          const Text('定制周计划', style: TextStyle(color: C.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
+          const Text(
+            '定制周计划',
+            style: TextStyle(
+              color: C.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('还没有生成的 AI 计划，去 AI 助手页面生成吧', textAlign: TextAlign.center, style: TextStyle(color: C.textMuted, fontSize: 13)),
+          const Text(
+            '还没有生成的 AI 计划，去 AI 助手页面生成吧',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: C.textMuted, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -223,7 +406,9 @@ class HomePage extends StatelessWidget {
   ];
 
   Widget _buildSelfDialogueCard() {
-    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+    final dayOfYear = DateTime.now()
+        .difference(DateTime(DateTime.now().year, 1, 1))
+        .inDays;
     final dialogue = _selfDialogues[dayOfYear % _selfDialogues.length];
     return AppCard(
       borderColor: C.cyan.withOpacity(0.15),
@@ -232,15 +417,32 @@ class HomePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.chat_bubble_outline_rounded, color: C.cyan, size: 18),
+              const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: C.cyan,
+                size: 18,
+              ),
               const SizedBox(width: 8),
-              const Text('今日内心对话', style: TextStyle(color: C.textPrimary, fontSize: 14, fontWeight: FontWeight.w800)),
+              const Text(
+                '今日内心对话',
+                style: TextStyle(
+                  color: C.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             '"$dialogue"',
-            style: const TextStyle(color: C.textSecondary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.6, fontStyle: FontStyle.italic),
+            style: const TextStyle(
+              color: C.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              height: 1.6,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
@@ -261,7 +463,14 @@ class _PlanItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: C.textMuted)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: C.textMuted,
+            ),
+          ),
           const SizedBox(height: 6),
           for (final item in items!)
             Padding(
@@ -269,8 +478,18 @@ class _PlanItem extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${item.food} ${item.amount}', style: const TextStyle(fontSize: 14, color: C.textPrimary, fontWeight: FontWeight.w500)),
-                  Text('${item.cal}kcal', style: const TextStyle(fontSize: 13, color: C.textMuted)),
+                  Text(
+                    '${item.food} ${item.amount}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: C.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${item.cal}kcal',
+                    style: const TextStyle(fontSize: 13, color: C.textMuted),
+                  ),
                 ],
               ),
             ),
@@ -299,20 +518,44 @@ class _StatCard extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, size: 18, color: color),
             ),
             const SizedBox(height: 16),
-            Text(label, style: const TextStyle(fontSize: 12, color: C.textMuted, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: C.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: C.textPrimary)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: C.textPrimary,
+                  ),
+                ),
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 3),
-                  child: Text(unit, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8), fontWeight: FontWeight.w700)),
+                  child: Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.withOpacity(0.8),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -342,20 +585,44 @@ class _StatStatCard extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, size: 18, color: color),
             ),
             const SizedBox(height: 16),
-            Text(label, style: const TextStyle(fontSize: 12, color: C.textMuted, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: C.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: C.textPrimary)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: C.textPrimary,
+                  ),
+                ),
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 3),
-                  child: Text(unit, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8), fontWeight: FontWeight.w700)),
+                  child: Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.withOpacity(0.8),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -392,10 +659,17 @@ class _ProgressRingPainter extends CustomPainter {
       ..strokeWidth = 14
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
-    
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -pi / 2, 2 * pi * progress, false, fgPaint);
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2,
+      2 * pi * progress,
+      false,
+      fgPaint,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _ProgressRingPainter old) => old.progress != progress;
+  bool shouldRepaint(covariant _ProgressRingPainter old) =>
+      old.progress != progress;
 }

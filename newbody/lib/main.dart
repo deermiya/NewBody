@@ -68,6 +68,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _loadAll() async {
+    await AppConfig.load();
     final data = await StorageService.loadData();
     final plan = await StorageService.loadPlan();
     setState(() {
@@ -100,7 +101,7 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     final pages = [
-      HomePage(data: _data, plan: _plan, todayCal: _todayCal, todayBurn: _todayBurn, latestWeight: _latestWeight),
+      HomePage(data: _data, plan: _plan, todayCal: _todayCal, todayBurn: _todayBurn, latestWeight: _latestWeight, onConfigChanged: () => setState(() {})),
       FoodPage(data: _data, updateData: _updateData, todayCal: _todayCal),
       ExercisePage(data: _data, updateData: _updateData, todayExercise: _todayExercise, todayBurn: _todayBurn),
       TrendPage(data: _data, updateData: _updateData, latestWeight: _latestWeight),
