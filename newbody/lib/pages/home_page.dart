@@ -52,7 +52,11 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
+
+          // 今日内心对话
+          _buildSelfDialogueCard(),
+          const SizedBox(height: 24),
 
           // Central Progress Ring
           Center(
@@ -144,10 +148,6 @@ class HomePage extends StatelessWidget {
 
           // Today's Plan
           if (todayPlan != null) _buildPlanCard(todayPlan, wd) else _buildNoPlan(),
-          const SizedBox(height: 16),
-
-          // 今日内心对话
-          _buildSelfDialogueCard(),
           const SizedBox(height: 40),
         ],
       ),
