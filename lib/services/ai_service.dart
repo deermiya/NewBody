@@ -28,10 +28,10 @@ JSON格式如下：
     }
 
     try {
-      final baseUrl = AppConfig.anthropicBaseUrl.isEmpty 
-          ? 'https://api.anthropic.com' 
+      final baseUrl = AppConfig.anthropicBaseUrl.isEmpty
+          ? 'https://api.anthropic.com'
           : AppConfig.anthropicBaseUrl;
-      
+
       final url = Uri.parse('$baseUrl/v1/messages');
 
       final resp = await http.post(
@@ -42,8 +42,8 @@ JSON格式如下：
           'anthropic-version': '2023-06-01',
         },
         body: jsonEncode({
-          'model': AppConfig.anthropicModel.isEmpty 
-              ? 'claude-3-5-sonnet-20240620' 
+          'model': AppConfig.anthropicModel.isEmpty
+              ? 'claude-3-5-sonnet-20240620'
               : AppConfig.anthropicModel,
           'max_tokens': 1000,
           'system': buildSystemPrompt(latestWeightJin),
@@ -71,23 +71,21 @@ JSON格式如下：
       return '请先在 config.dart 中设置 API Key';
     }
 
-    final prompt = '''根据以下条件，生成一周运动计划：
+    final prompt =
+        '''只输出JSON，不要markdown，不要解释。
 
-用户信息：${AppConfig.height.toStringAsFixed(0)}cm，${weightJin.toStringAsFixed(0)}斤，${AppConfig.occupation}，运动基础差，目标减脂。
-可用器械：${equipment.join('、')}（另外始终可做徒手动作）
+用户：${AppConfig.height.toStringAsFixed(0)}cm，${weightJin.toStringAsFixed(0)}斤，${AppConfig.occupation}，新手减脂。
+可用器械：${equipment.join('、')}，也可徒手。
 
-要求：
-1. 只输出JSON，不要任何其他文字、不要markdown代码块
-2. 每周安排4-5个训练日 + 2-3个休息日（休息日可安排轻度拉伸）
-3. 每天2-4个动作，难度循序渐进
-4. 充分利用用户已有的器械，同时穿插徒手动作
-5. 标注每个动作用到的器械（"徒手"或具体器械名）
-6. 适合运动基础差的人，不要高难度动作
+硬性要求：
+- 根对象只能有 days 字段。
+- days 必须正好7项：周一到周日。
+- 只安排4个训练日，3个休息日。
+- 每个训练日只给1个动作；休息日 exercises 为空。
+- 所有文字都短一点。
 
-JSON格式：
-{"days":[{"day":"周一","type":"训练日","focus":"上肢","exercises":[{"name":"动作名","equipment":"哑铃/徒手","sets":3,"reps":"12次","rest":"60秒","cal":数字,"tip":"可选的动作要点提示"}],"total_cal":数字,"note":"可选备注"},{"day":"周二","type":"休息日","exercises":[],"total_cal":0},...]}
-
-必须包含周一到周日共7天。''';
+严格按这个结构：
+{"days":[{"day":"周一","type":"训练日","focus":"上肢","exercises":[{"name":"动作名","equipment":"器械名或徒手","sets":3,"reps":"12次","rest":"60秒","cal":60,"tip":"慢一点"}],"total_cal":60,"note":"可选"},{"day":"周二","type":"休息日","focus":"恢复","exercises":[],"total_cal":0,"note":"散步"}]}''';
 
     try {
       final baseUrl = AppConfig.anthropicBaseUrl.isEmpty
@@ -105,9 +103,11 @@ JSON格式：
           'model': AppConfig.anthropicModel.isEmpty
               ? 'claude-3-5-sonnet-20240620'
               : AppConfig.anthropicModel,
-          'max_tokens': 2000,
+          'max_tokens': 12000,
           'system': '你是一个专业的运动教练AI，只输出JSON。',
-          'messages': [{'role': 'user', 'content': prompt}],
+          'messages': [
+            {'role': 'user', 'content': prompt},
+          ],
         }),
       );
       if (resp.statusCode == 200) {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../config.dart';
 import '../widgets/common.dart';
+import 'sync_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback onSaved;
+  final Future<void> Function()? onDataRestored;
 
-  const ProfilePage({super.key, required this.onSaved});
+  const ProfilePage({super.key, required this.onSaved, this.onDataRestored});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -24,12 +26,20 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _heightCtl = TextEditingController(text: AppConfig.height.toStringAsFixed(0));
-    _startWeightCtl = TextEditingController(text: (AppConfig.startWeight * 2).toStringAsFixed(1));
-    _targetWeightCtl = TextEditingController(text: (AppConfig.targetWeight * 2).toStringAsFixed(1));
+    _heightCtl = TextEditingController(
+      text: AppConfig.height.toStringAsFixed(0),
+    );
+    _startWeightCtl = TextEditingController(
+      text: (AppConfig.startWeight * 2).toStringAsFixed(1),
+    );
+    _targetWeightCtl = TextEditingController(
+      text: (AppConfig.targetWeight * 2).toStringAsFixed(1),
+    );
     _startDateCtl = TextEditingController(text: AppConfig.startDate);
     _targetDateCtl = TextEditingController(text: AppConfig.targetDate);
-    _calorieCtl = TextEditingController(text: AppConfig.dailyCalorieTarget.toString());
+    _calorieCtl = TextEditingController(
+      text: AppConfig.dailyCalorieTarget.toString(),
+    );
     _bmrCtl = TextEditingController(text: AppConfig.bmr.toString());
     _occupationCtl = TextEditingController(text: AppConfig.occupation);
   }
@@ -51,7 +61,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final parts = ctl.text.split('-');
     DateTime initial;
     try {
-      initial = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+      initial = DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
     } catch (_) {
       initial = DateTime.now();
     }
@@ -63,14 +77,18 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx, child) {
         return Theme(
           data: Theme.of(ctx).copyWith(
-            colorScheme: const ColorScheme.light(primary: C.green, onSurface: C.textPrimary),
+            colorScheme: const ColorScheme.light(
+              primary: C.green,
+              onSurface: C.textPrimary,
+            ),
           ),
           child: child!,
         );
       },
     );
     if (picked != null) {
-      ctl.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      ctl.text =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
   }
 
@@ -117,9 +135,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: C.rose),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: C.rose));
   }
 
   @override
@@ -133,7 +151,14 @@ class _ProfilePageState extends State<ProfilePage> {
           icon: const Icon(Icons.arrow_back_rounded, color: C.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('个人资料', style: TextStyle(color: C.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+        title: const Text(
+          '个人资料',
+          style: TextStyle(
+            color: C.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         centerTitle: true,
       ),
       body: ListView(
@@ -155,8 +180,42 @@ class _ProfilePageState extends State<ProfilePage> {
             _numField('基础代谢率 (BMR)', _bmrCtl, 'kcal'),
           ]),
           const SizedBox(height: 8),
-          _section('个人信息', [
-            _textField('职业/生活方式', _occupationCtl, '如：久坐程序员'),
+          _section('个人信息', [_textField('职业/生活方式', _occupationCtl, '如：久坐程序员')]),
+          const SizedBox(height: 8),
+          _section('数据同步', [
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SyncPage(onSynced: widget.onDataRestored),
+                  ),
+                );
+              },
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: C.bg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: C.border),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.cloud_sync_rounded, color: C.green, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      '打开云同步',
+                      style: TextStyle(
+                        color: C.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ]),
           const SizedBox(height: 24),
           GradientButton(text: '保存', icon: Icons.check_rounded, onTap: _save),
@@ -171,7 +230,14 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: C.green)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: C.green,
+            ),
+          ),
           const SizedBox(height: 16),
           ...children,
         ],
@@ -186,7 +252,14 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontSize: 14, color: C.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: C.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
             child: Container(
@@ -198,13 +271,23 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: TextField(
                 controller: ctl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: C.textPrimary),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: C.textPrimary,
+                ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                   suffixText: unit,
-                  suffixStyle: TextStyle(fontSize: 13, color: C.textMuted, fontWeight: FontWeight.w500),
+                  suffixStyle: TextStyle(
+                    fontSize: 13,
+                    color: C.textMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -221,7 +304,14 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontSize: 14, color: C.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: C.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
             child: Container(
@@ -233,7 +323,11 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: TextField(
                 controller: ctl,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: C.textPrimary),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: C.textPrimary,
+                ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
@@ -255,7 +349,14 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontSize: 14, color: C.textSecondary, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: C.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
             child: GestureDetector(
@@ -269,7 +370,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 alignment: Alignment.centerLeft,
-                child: Text(ctl.text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: C.textPrimary)),
+                child: Text(
+                  ctl.text,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: C.textPrimary,
+                  ),
+                ),
               ),
             ),
           ),

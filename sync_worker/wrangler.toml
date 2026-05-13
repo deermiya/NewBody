@@ -1,0 +1,8 @@
+name = "newbody-sync"
+main = "src/index.js"
+compatibility_date = "2026-05-13"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "newbody_sync"
+database_id = "f26fbc10-66f9-4979-b95e-15e67651a394"

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
 import '../models/data_models.dart';
 
 class StorageService {
@@ -7,6 +8,7 @@ class StorageService {
   static const _planKey = 'newbody-plan';
   static const _equipmentKey = 'newbody-equipment';
   static const _exercisePlanKey = 'newbody-exercise-plan';
+  static const _syncKey = 'newbody-sync-key';
 
   static Future<AppData> loadData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -64,5 +66,66 @@ class StorageService {
   static Future<void> saveExercisePlan(WeekExercisePlan plan) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_exercisePlanKey, jsonEncode(plan.toJson()));
+  }
+
+  static Future<String?> loadSyncKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_syncKey);
+  }
+
+  static Future<void> saveSyncKey(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_syncKey, key);
+  }
+
+  static Future<Map<String, dynamic>> exportSnapshot() async {
+    final data = await loadData();
+    final plan = await loadPlan();
+    final equipment = await loadEquipment();
+    final exercisePlan = await loadExercisePlan();
+
+    return {
+      'schema_version': 1,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'config': AppConfig.toJson(),
+      'data': data.toJson(),
+      'plan': plan?.toJson(),
+      'equipment': equipment,
+      'exercise_plan': exercisePlan?.toJson(),
+    };
+  }
+
+  static Future<void> importSnapshot(Map<String, dynamic> snapshot) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final config = snapshot['config'];
+    if (config is Map<String, dynamic>) {
+      AppConfig.applyJson(config);
+      await AppConfig.save();
+    }
+
+    final data = snapshot['data'];
+    if (data is Map<String, dynamic>) {
+      await saveData(AppData.fromJson(data));
+    }
+
+    final plan = snapshot['plan'];
+    if (plan is Map<String, dynamic>) {
+      await savePlan(WeekPlan.fromJson(plan));
+    } else if (snapshot.containsKey('plan')) {
+      await prefs.remove(_planKey);
+    }
+
+    final equipment = snapshot['equipment'];
+    if (equipment is List) {
+      await saveEquipment(equipment.map((e) => e.toString()).toList());
+    }
+
+    final exercisePlan = snapshot['exercise_plan'];
+    if (exercisePlan is Map<String, dynamic>) {
+      await saveExercisePlan(WeekExercisePlan.fromJson(exercisePlan));
+    } else if (snapshot.containsKey('exercise_plan')) {
+      await prefs.remove(_exercisePlanKey);
+    }
   }
 }

@@ -60,6 +60,7 @@ class _MainScreenState extends State<MainScreen> {
   AppData _data = AppData();
   WeekPlan? _plan;
   bool _loaded = false;
+  int _exercisePlanVersion = 0;
 
   @override
   void initState() {
@@ -83,38 +84,71 @@ class _MainScreenState extends State<MainScreen> {
     StorageService.saveData(newData);
   }
 
+  Future<void> _reloadLocalState() async {
+    await AppConfig.load();
+    final data = await StorageService.loadData();
+    final plan = await StorageService.loadPlan();
+    if (!mounted) return;
+    setState(() {
+      _data = data;
+      _plan = plan;
+      _exercisePlanVersion++;
+    });
+  }
+
   double get _latestWeight {
     if (_data.weightLog.isNotEmpty) return _data.weightLog.last.weight;
     return AppConfig.startWeight;
   }
 
-  List<FoodEntry> get _todayFood => _data.foodLog.where((f) => f.date == todayStr()).toList();
-  List<ExerciseEntry> get _todayExercise => _data.exerciseLog.where((e) => e.date == todayStr()).toList();
+  List<FoodEntry> get _todayFood =>
+      _data.foodLog.where((f) => f.date == todayStr()).toList();
+  List<ExerciseEntry> get _todayExercise =>
+      _data.exerciseLog.where((e) => e.date == todayStr()).toList();
   int get _todayCal => _todayFood.fold(0, (s, f) => s + f.cal);
   int get _todayBurn => _todayExercise.fold(0, (s, e) => s + e.cal);
-  int get _todayMindCount => _data.mindLog.where((m) => m.date == todayStr()).length;
+  int get _todayMindCount =>
+      _data.mindLog.where((m) => m.date == todayStr()).length;
 
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator(color: C.green)));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: C.green)),
+      );
     }
 
     final pages = [
-      HomePage(data: _data, plan: _plan, todayCal: _todayCal, todayBurn: _todayBurn, latestWeight: _latestWeight, onConfigChanged: () => setState(() {})),
+      HomePage(
+        data: _data,
+        updateData: _updateData,
+        plan: _plan,
+        todayCal: _todayCal,
+        todayBurn: _todayBurn,
+        latestWeight: _latestWeight,
+        onConfigChanged: () => setState(() {}),
+        onPlansImported: _reloadLocalState,
+      ),
       FoodPage(data: _data, updateData: _updateData, todayCal: _todayCal),
-      ExercisePage(data: _data, updateData: _updateData, todayExercise: _todayExercise, todayBurn: _todayBurn),
-      TrendPage(data: _data, updateData: _updateData, latestWeight: _latestWeight),
-      MindPage(data: _data, updateData: _updateData, getTodayMindCount: () => _todayMindCount),
+      ExercisePage(
+        key: ValueKey(_exercisePlanVersion),
+        data: _data,
+        updateData: _updateData,
+        todayExercise: _todayExercise,
+        todayBurn: _todayBurn,
+      ),
+      TrendPage(
+        data: _data,
+        updateData: _updateData,
+        latestWeight: _latestWeight,
+      ),
+      MindPage(data: _data, getTodayMindCount: () => _todayMindCount),
     ];
 
     return Scaffold(
       extendBody: true,
       body: SafeArea(
-        child: IndexedStack(
-          index: _tabIndex,
-          children: pages,
-        ),
+        child: IndexedStack(index: _tabIndex, children: pages),
       ),
       bottomNavigationBar: _buildNavbar(),
     );
@@ -134,7 +168,11 @@ class _MainScreenState extends State<MainScreen> {
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: C.green.withOpacity(0.08), width: 1.5),
               boxShadow: [
-                BoxShadow(color: C.green.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4)),
+                BoxShadow(
+                  color: C.green.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: Row(
@@ -169,14 +207,17 @@ class _MainScreenState extends State<MainScreen> {
               color: active ? C.cyan.withOpacity(0.1) : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              icon,
-              color: active ? C.green : C.textMuted,
-              size: 24,
-            ),
+            child: Icon(icon, color: active ? C.green : C.textMuted, size: 24),
           ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: active ? C.green : C.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              color: active ? C.green : C.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
