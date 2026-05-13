@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import '../config.dart';
 import '../models/data_models.dart';
 import '../widgets/common.dart';
+import 'shopping_list_page.dart';
 
 class FoodPage extends StatefulWidget {
   final AppData data;
   final void Function(AppData) updateData;
   final int todayCal;
+  final WeekPlan? plan;
 
-  const FoodPage({super.key, required this.data, required this.updateData, required this.todayCal});
+  const FoodPage({super.key, required this.data, required this.updateData, required this.todayCal, this.plan});
 
   @override
   State<FoodPage> createState() => _FoodPageState();
@@ -64,6 +66,69 @@ class _FoodPageState extends State<FoodPage> {
           // Search and Custom
           _buildSearchBox(),
           const SizedBox(height: 16),
+
+          // Shopping List Entry
+          if (widget.plan != null)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShoppingListPage(plan: widget.plan!),
+                  ),
+                );
+              },
+              child: AppCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                borderColor: C.cyan.withOpacity(0.18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: C.amber.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_cart_rounded,
+                        color: C.amber,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '本周购物清单',
+                            style: TextStyle(
+                              color: C.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            '根据饮食计划自动生成，可勾选已买食材',
+                            style: TextStyle(
+                              color: C.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: C.textMuted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (widget.plan != null) const SizedBox(height: 8),
 
           // Today Log
           if (todayFoods.isNotEmpty) ...[

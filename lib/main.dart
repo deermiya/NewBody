@@ -10,6 +10,7 @@ import 'pages/exercise_page.dart';
 import 'pages/trend_page.dart';
 import 'pages/mind_page.dart';
 import 'config.dart';
+import 'data/weekly_plan_data.dart';
 import 'services/greeting_service.dart';
 import 'widgets/greeting_dialog.dart';
 
@@ -72,6 +73,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _loadAll() async {
     await AppConfig.load();
+    await WeeklyPlanData.importIfNeeded();
     final data = await StorageService.loadData();
     final plan = await StorageService.loadPlan();
     setState(() {
@@ -174,7 +176,7 @@ class _MainScreenState extends State<MainScreen> {
         onConfigChanged: () => setState(() {}),
         onPlansImported: _reloadLocalState,
       ),
-      FoodPage(data: _data, updateData: _updateData, todayCal: _todayCal),
+      FoodPage(data: _data, updateData: _updateData, todayCal: _todayCal, plan: _plan),
       ExercisePage(
         key: ValueKey(_exercisePlanVersion),
         data: _data,
