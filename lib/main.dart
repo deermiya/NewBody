@@ -10,6 +10,8 @@ import 'pages/exercise_page.dart';
 import 'pages/trend_page.dart';
 import 'pages/mind_page.dart';
 import 'config.dart';
+import 'services/greeting_service.dart';
+import 'widgets/greeting_dialog.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
       _plan = plan;
       _loaded = true;
     });
+    _showDailyGreeting();
   }
 
   void _updateData(AppData newData) {
@@ -94,6 +97,48 @@ class _MainScreenState extends State<MainScreen> {
       _plan = plan;
       _exercisePlanVersion++;
     });
+  }
+
+  Future<void> _showDailyGreeting() async {
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+
+    final latestWeightJin = _latestWeight * 2;
+    final totalLostJin = (AppConfig.startWeight - _latestWeight) * 2;
+    final daysSinceStart = DateTime.now()
+        .difference(DateTime.parse(AppConfig.startDate))
+        .inDays;
+    final daysLeft = DateTime.parse(
+      AppConfig.targetDate,
+    ).difference(DateTime.now()).inDays;
+    final recentEmotions = _data.mindLog
+        .where(
+          (m) =>
+              DateTime.tryParse(m.date)?.isAfter(
+                DateTime.now().subtract(const Duration(days: 3)),
+              ) ==
+              true,
+        )
+        .map((m) => m.emotion)
+        .toSet()
+        .toList();
+
+    final message = await GreetingService.getDailyGreeting(
+      latestWeightJin: latestWeightJin,
+      totalLostJin: totalLostJin,
+      daysSinceStart: daysSinceStart.clamp(0, 9999),
+      daysLeft: daysLeft.clamp(0, 9999),
+      todayCal: _todayCal,
+      recentMindEmotions: recentEmotions,
+    );
+
+    if (!mounted) return;
+    showDailyGreetingDialog(
+      context,
+      message: message,
+      totalLostJin: totalLostJin,
+      daysSinceStart: daysSinceStart.clamp(0, 9999),
+    );
   }
 
   double get _latestWeight {
