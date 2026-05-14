@@ -61,7 +61,9 @@ class _FoodPageState extends State<FoodPage> {
               _buildTopBadge(),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          _buildTodayPlanCard(),
+          const SizedBox(height: 16),
 
           // Search and Custom
           _buildSearchBox(),
@@ -251,6 +253,67 @@ class _FoodPageState extends State<FoodPage> {
       ),
     );
   }
+
+  Widget _buildTodayPlanCard() {
+    final wd = weekdayCN();
+    final todayPlan = widget.plan?.days.where((d) => d.day == wd).firstOrNull;
+    if (todayPlan == null) {
+      return AppCard(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        child: Row(
+          children: [
+            Icon(Icons.restaurant_menu_rounded, color: C.amber.withOpacity(0.4), size: 28),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Text(
+                '还没有 AI 饮食计划，去觉察页面的 AI 教练生成吧',
+                style: TextStyle(color: C.textMuted, fontSize: 13, height: 1.5),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return AppCard(
+      borderColor: C.amber.withOpacity(0.2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: C.amber.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.calendar_today_rounded, size: 16, color: C.amber),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '今日 AI 饮食建议 ($wd)',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: C.textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _FoodPlanItem('早餐', todayPlan.meals['breakfast']),
+          _FoodPlanItem('午餐', todayPlan.meals['lunch']),
+          _FoodPlanItem('晚餐', todayPlan.meals['dinner']),
+          if ((todayPlan.meals['snack'] ?? []).isNotEmpty)
+            _FoodPlanItem('加餐', todayPlan.meals['snack']),
+          const Divider(color: C.border, height: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(
+              '计划摄入：${todayPlan.totalIntake} kcal',
+              style: const TextStyle(color: C.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DatabaseRow extends StatelessWidget {
@@ -316,6 +379,46 @@ class _LogRow extends StatelessWidget {
             onTap: onDelete,
             child: Icon(Icons.close_rounded, size: 18, color: C.rose.withOpacity(0.5)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FoodPlanItem extends StatelessWidget {
+  final String title;
+  final List<MealItem>? items;
+  const _FoodPlanItem(this.title, this.items);
+
+  @override
+  Widget build(BuildContext context) {
+    if (items == null || items!.isEmpty) return const SizedBox();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w800, color: C.textMuted, letterSpacing: 0.5)),
+          const SizedBox(height: 6),
+          for (final item in items!)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.food}  ${item.amount}',
+                      style: const TextStyle(fontSize: 13, color: C.textPrimary, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  Text('${item.cal}kcal',
+                      style: const TextStyle(fontSize: 12, color: C.textMuted)),
+                ],
+              ),
+            ),
         ],
       ),
     );

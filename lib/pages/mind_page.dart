@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/data_models.dart';
+import '../services/storage_service.dart';
 import '../widgets/common.dart';
 import '../pages/ai_page.dart';
 import '../config.dart';
@@ -7,11 +8,13 @@ import '../config.dart';
 class MindPage extends StatefulWidget {
   final AppData data;
   final int Function() getTodayMindCount;
+  final Future<void> Function()? onPlanSaved; // AI 计划保存后通知上层刷新
 
   const MindPage({
     super.key,
     required this.data,
     required this.getTodayMindCount,
+    this.onPlanSaved,
   });
 
   @override
@@ -389,14 +392,27 @@ class _MindPageState extends State<MindPage> {
   Widget _buildAIEntrySection() {
     return GestureDetector(
       onTap: () {
+        final todayFoods = widget.data.foodLog
+            .where((f) => f.date == todayStr())
+            .toList();
+        final todayCal = todayFoods.fold(0, (s, f) => s + f.cal);
+        final latestWeight = widget.data.weightLog.isNotEmpty
+            ? widget.data.weightLog.last.weight
+            : AppConfig.startWeight;
+
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => AIPage(
               plan: null,
-              updatePlan: (_) {},
-              latestWeight: AppConfig.startWeight,
-              todayCal: 0,
-              todayBurn: 0,
+              updatePlan: (newPlan) async {
+                await StorageService.savePlan(newPlan);
+                await widget.onPlanSaved?.call();
+              },
+              latestWeight: latestWeight,
+              todayCal: todayCal,
+              todayBurn: widget.data.exerciseLog
+                  .where((e) => e.date == todayStr())
+                  .fold(0, (s, e) => s + e.cal),
             ),
           ),
         );

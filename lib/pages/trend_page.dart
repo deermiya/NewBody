@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../config.dart';
 import '../models/data_models.dart';
 import '../widgets/common.dart';
+import '../services/export_service.dart';
 
 class TrendPage extends StatefulWidget {
   final AppData data;
@@ -73,7 +74,13 @@ class _TrendPageState extends State<TrendPage> {
                   color: C.textPrimary,
                 ),
               ),
-              _buildDiffBadge(),
+              Row(
+                children: [
+                  _buildExportBtn(),
+                  const SizedBox(width: 8),
+                  _buildDiffBadge(),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -123,6 +130,51 @@ class _TrendPageState extends State<TrendPage> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildExportBtn() {
+    return GestureDetector(
+      onTap: () async {
+        final total = widget.data.weightLog.length +
+            widget.data.foodLog.length +
+            widget.data.exerciseLog.length +
+            widget.data.mindLog.length;
+        if (total == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('还没有任何记录可以导出'), backgroundColor: C.rose),
+          );
+          return;
+        }
+        try {
+          await ExportService.exportAll(widget.data);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('导出失败: $e'), backgroundColor: C.rose),
+            );
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: C.green.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: C.green.withOpacity(0.2)),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.ios_share_rounded, size: 14, color: C.green),
+            SizedBox(width: 5),
+            Text(
+              '导出',
+              style: TextStyle(color: C.green, fontSize: 12, fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
       ),
     );
   }

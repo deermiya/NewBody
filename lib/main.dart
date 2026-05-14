@@ -102,17 +102,17 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _showDailyGreeting() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    // 等首帧渲染完毕后立刻弹出，无人工延迟
+    await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
 
     final latestWeightJin = _latestWeight * 2;
     final totalLostJin = (AppConfig.startWeight - _latestWeight) * 2;
     final daysSinceStart = DateTime.now()
-        .difference(DateTime.parse(AppConfig.startDate))
+        .difference(DateTime.tryParse(AppConfig.startDate) ?? DateTime.now())
         .inDays;
-    final daysLeft = DateTime.parse(
-      AppConfig.targetDate,
-    ).difference(DateTime.now()).inDays;
+    final daysLeft = (DateTime.tryParse(AppConfig.targetDate) ?? DateTime.now().add(const Duration(days: 180)))
+        .difference(DateTime.now()).inDays;
     final recentEmotions = _data.mindLog
         .where(
           (m) =>
@@ -189,7 +189,7 @@ class _MainScreenState extends State<MainScreen> {
         updateData: _updateData,
         latestWeight: _latestWeight,
       ),
-      MindPage(data: _data, getTodayMindCount: () => _todayMindCount),
+      MindPage(data: _data, getTodayMindCount: () => _todayMindCount, onPlanSaved: _reloadLocalState),
     ];
 
     return Scaffold(

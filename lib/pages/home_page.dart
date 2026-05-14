@@ -36,11 +36,8 @@ class HomePage extends StatelessWidget {
     final totalLost = AppConfig.startWeight - latestWeight;
     final totalNeed = AppConfig.startWeight - AppConfig.targetWeight;
     final progress = (totalLost / totalNeed).clamp(0.0, 1.0);
-    final daysLeft = DateTime.parse(
-      AppConfig.targetDate,
-    ).difference(DateTime.now()).inDays.clamp(0, 9999);
-    final wd = weekdayCN();
-    final todayPlan = plan?.days.where((d) => d.day == wd).firstOrNull;
+    final daysLeft = (DateTime.tryParse(AppConfig.targetDate) ?? DateTime.now().add(const Duration(days: 180)))
+        .difference(DateTime.now()).inDays.clamp(0, 9999);
 
     return Container(
       decoration: const BoxDecoration(
@@ -342,120 +339,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
 
-          // Today's Plan
-          if (todayPlan != null)
-            _buildPlanCard(todayPlan, wd)
-          else
-            _buildNoPlan(),
           const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlanCard(DayPlan plan, String wd) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_today_rounded,
-                size: 18,
-                color: C.green,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '今日 AI 建议 ($wd)',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: C.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _PlanItem('早餐', plan.meals['breakfast']),
-          _PlanItem('午餐', plan.meals['lunch']),
-          _PlanItem('晚餐', plan.meals['dinner']),
-          if (plan.exercise.isNotEmpty) ...[
-            const Divider(color: C.border, height: 32),
-            const Text(
-              '推荐运动',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: C.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            for (final ex in plan.exercise)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: C.cyan,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${ex.name} (${ex.duration})',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: C.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '-${ex.cal}kcal',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: C.green,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoPlan() {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-      child: Column(
-        children: [
-          Icon(
-            Icons.auto_awesome_rounded,
-            size: 32,
-            color: C.green.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '定制周计划',
-            style: TextStyle(
-              color: C.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '还没有生成的 AI 计划，去 AI 助手页面生成吧',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: C.textMuted, fontSize: 13),
-          ),
         ],
       ),
     );
@@ -1015,55 +899,6 @@ class _DelayTimerCardState extends State<_DelayTimerCard> {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PlanItem extends StatelessWidget {
-  final String title;
-  final List<MealItem>? items;
-  const _PlanItem(this.title, this.items);
-
-  @override
-  Widget build(BuildContext context) {
-    if (items == null || items!.isEmpty) return const SizedBox();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: C.textMuted,
-            ),
-          ),
-          const SizedBox(height: 6),
-          for (final item in items!)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${item.food} ${item.amount}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: C.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '${item.cal}kcal',
-                    style: const TextStyle(fontSize: 13, color: C.textMuted),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

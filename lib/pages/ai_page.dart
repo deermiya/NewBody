@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/data_models.dart';
 import '../services/ai_service.dart';
 import '../widgets/common.dart';
 
 class AIPage extends StatefulWidget {
   final WeekPlan? plan;
-  final void Function(WeekPlan) updatePlan;
+  final Future<void> Function(WeekPlan) updatePlan;
   final double latestWeight;
   final int todayCal;
   final int todayBurn;
@@ -20,11 +21,56 @@ class AIPage extends StatefulWidget {
 class _AIPageState extends State<AIPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  final List<Map<String, String>> _messages = [
-    {'role': 'assistant', 'content': '你好！我是你的 AI 健康教练。我可以帮你制定饮食计划，或解答减肥中的任何困惑。'}
-  ];
+
+  static const _messagesKey = 'ai-chat-messages';
+
+  // 内存缓存，首次为 null 表示尚未从磁盘加载
+  static List<Map<String, String>>? _cachedMessages;
+  static WeekPlan? _pendingPlan;
+
   bool _loading = false;
-  WeekPlan? _pendingPlan;
+  bool _historyLoaded = false;
+
+  static const _initMsg = {'role': 'assistant', 'content': '你好！我是你的 AI 健康教练。我可以帮你制定饮食计划，或解答减肥中的任何困惑。'};
+
+  List<Map<String, String>> get _messages => _cachedMessages!;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    if (_cachedMessages != null) {
+      // 内存已有，直接定位底部
+      setState(() => _historyLoaded = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_messagesKey);
+    if (raw != null) {
+      try {
+        final list = (jsonDecode(raw) as List)
+            .map((e) => Map<String, String>.from(e as Map))
+            .toList();
+        _cachedMessages = list.isNotEmpty ? list : [_initMsg];
+      } catch (_) {
+        _cachedMessages = [_initMsg];
+      }
+    } else {
+      _cachedMessages = [_initMsg];
+    }
+    if (!mounted) return;
+    setState(() => _historyLoaded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  Future<void> _saveMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_messagesKey, jsonEncode(_cachedMessages));
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -35,7 +81,7 @@ class _AIPageState extends State<AIPage> {
   }
 
   Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty || !_historyLoaded) return;
     setState(() {
       _messages.add({'role': 'user', 'content': text});
       _loading = true;
@@ -43,6 +89,7 @@ class _AIPageState extends State<AIPage> {
     });
     _controller.clear();
     _scrollToBottom();
+    await _saveMessages();
 
     final reply = await AIService.sendMessage(
       messages: _messages,
@@ -68,16 +115,18 @@ class _AIPageState extends State<AIPage> {
       }
     });
     _scrollToBottom();
+    await _saveMessages();
   }
 
-  void _savePlan() {
+  Future<void> _savePlan() async {
     if (_pendingPlan == null) return;
-    widget.updatePlan(_pendingPlan!);
+    await widget.updatePlan(_pendingPlan!);
     setState(() {
       _pendingPlan = null;
       _messages.add({'role': 'assistant', 'content': '🎉 计划已同步至首页，开启健康的一周吧！'});
     });
     _scrollToBottom();
+    _saveMessages();
   }
 
   @override
@@ -89,29 +138,36 @@ class _AIPageState extends State<AIPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: C.bg,
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              itemCount: _messages.length + (_loading ? 1 : 0) + (_pendingPlan != null ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index < _messages.length) {
-                  return _MessageBubble(message: _messages[index]);
-                } else if (_loading && index == _messages.length) {
-                  return _buildLoadingIndicator();
-                } else {
-                  return _buildPlanPreview();
-                }
-              },
+    if (!_historyLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: C.green)),
+      );
+    }
+    return Scaffold(
+      backgroundColor: C.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                itemCount: _messages.length + (_loading ? 1 : 0) + (_pendingPlan != null ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index < _messages.length) {
+                    return _MessageBubble(message: _messages[index]);
+                  } else if (_loading && index == _messages.length) {
+                    return _buildLoadingIndicator();
+                  } else {
+                    return _buildPlanPreview();
+                  }
+                },
+              ),
             ),
-          ),
-          _buildInputArea(),
-        ],
+            _buildInputArea(),
+          ],
+        ),
       ),
     );
   }
@@ -208,7 +264,7 @@ class _AIPageState extends State<AIPage> {
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: C.border, width: 0.5)),
